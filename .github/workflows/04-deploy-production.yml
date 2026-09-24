@@ -12,6 +12,63 @@ on:
         default: "latest"
 
 jobs:
+  security-scan:
+    name: Docker Scout Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build user-service Image for Scanning
+        run: docker build -t user-service:test ./user-service
+
+      - name: Run Docker Scout Vulnerability Scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: user-service:test
+          only-severities: critical,high
+          exit-code: false
+
+  terraform:
+    name: Provision Infrastructure (Terraform)
+    needs: security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      - name: Login to Azure
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init & Format Check
+        run: |
+          cd terraform
+          terraform init
+          terraform fmt -check
+
+      - name: Terraform Plan & Apply
+        run: |
+          cd terraform
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
@@ -146,3 +203,37 @@ jobs:
           kubectl get pods -n production
           kubectl get services -n production
           kubectl get pvc -n production
+
+  deploy-monitoring:
+    name: Deploy Prometheus & Grafana
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Login to Azure
+        uses: azure/login@v3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ vars.AKS_RESOURCE_GROUP }} \
+            --name ${{ vars.AKS_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.13.0'
+
+      - name: Deploy Kube-Prometheus-Stack
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --set grafana.service.type=LoadBalancer
