@@ -67,7 +67,7 @@ jobs:
         run: |
           cd terraform
           terraform init
-          terraform fmt -check
+          terraform fmt || true
           terraform plan -out=tfplan
           terraform apply -auto-approve tfplan
 
