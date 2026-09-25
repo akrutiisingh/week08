@@ -200,3 +200,7 @@ node_modules/
 terraform/.terraform/
 *.tfstate
 *.tfstate.backup
+
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
