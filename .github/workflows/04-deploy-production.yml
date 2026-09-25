@@ -67,7 +67,6 @@ jobs:
         run: |
           cd terraform
           terraform init
-          terraform import azurerm_resource_group.rg /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06 || true
           terraform plan -out=tfplan
           terraform apply -auto-approve tfplan
 
