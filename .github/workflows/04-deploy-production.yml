@@ -67,6 +67,10 @@ jobs:
         run: |
           cd terraform
           terraform init
+          terraform import azurerm_resource_group.rg /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06 || true
+          terraform import azurerm_container_registry.acr /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.ContainerRegistry/registries/acraksweek06 || true
+          terraform import azurerm_kubernetes_cluster.aks /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.ContainerService/managedClusters/aks-cluster-week06 || true
+          terraform import azurerm_storage_account.storage_account /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.Storage/storageAccounts/aksweek06 || true
           terraform plan -out=tfplan
           terraform apply -auto-approve tfplan
 
