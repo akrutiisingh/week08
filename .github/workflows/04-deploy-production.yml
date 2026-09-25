@@ -65,7 +65,7 @@ jobs:
 
       - name: Terraform Operations
         run: |
-          cd week06/example-1/terraform
+          cd terraform
           terraform init
           terraform fmt -check || true
           terraform plan -out=tfplan
