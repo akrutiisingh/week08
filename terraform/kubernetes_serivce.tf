@@ -32,5 +32,5 @@ resource "azurerm_role_assignment" "acr_pull" {
     role_definition_name             = "AcrPull"
     scope                            = azurerm_container_registry.acr.id
     skip_service_principal_aad_check = true
-*/
 }
+*/
