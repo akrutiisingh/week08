@@ -137,7 +137,7 @@ jobs:
       - name: Update user-service image
         run: |
           kubectl set image deployment/user-service \
-            user-service=${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}.azurecr.io/koalatech-user-service:${{ inputs.image_tag || github.sha }} \
+            user-service=${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-user-service:${{ inputs.image_tag || github.sha }} \
             -n production
 
       - name: Wait for user-service rollout
