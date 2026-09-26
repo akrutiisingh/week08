@@ -67,10 +67,14 @@ jobs:
         run: |
           cd terraform
           terraform init
+          
+          # Import pre-existing Azure infrastructure into state
           terraform import azurerm_resource_group.rg /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06 || true
           terraform import azurerm_container_registry.acr /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.ContainerRegistry/registries/acraksweek06 || true
           terraform import azurerm_kubernetes_cluster.aks /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.ContainerService/managedClusters/aks-cluster-week06 || true
           terraform import azurerm_storage_account.storage_account /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.Storage/storageAccounts/aksweek06 || true
+          
+          terraform fmt -check || true
           terraform plan -out=tfplan
           terraform apply -auto-approve tfplan
 
@@ -129,31 +133,21 @@ jobs:
             --dry-run=client \
             -o yaml | kubectl apply -f -
 
-            - name: Set images in manifests before apply
+      - name: Set images in manifests before apply
         run: |
-          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-user-service:${{ inputs.image_tag || github.sha }}#g" \
-            kubernetes/production/07-user-service.yaml
-          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-student-service:${{ inputs.image_tag || github.sha }}#g" \
-            kubernetes/production/08-student-service.yaml
-          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-lecturer-service:${{ inputs.image_tag || github.sha }}#g" \
-            kubernetes/production/09-lecturer-service.yaml
-          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-course-service:${{ inputs.image_tag || github.sha }}#g" \
-            kubernetes/production/10-course-service.yaml
-          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-enrollment-service:${{ inputs.image_tag || github.sha }}#g" \
-            kubernetes/production/11-enrollment-service.yaml
-          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-frontend:${{ inputs.image_tag || github.sha }}#g" \
-            kubernetes/production/12-frontend.yaml
+          REGISTRY="acraksweek06.azurecr.io"
+          TAG="${{ inputs.image_tag || github.sha }}"
+          
+          sed -i "s#placeholder#$REGISTRY/koalatech-user-service:$TAG#g" kubernetes/production/07-user-service.yaml
+          sed -i "s#placeholder#$REGISTRY/koalatech-student-service:$TAG#g" kubernetes/production/08-student-service.yaml
+          sed -i "s#placeholder#$REGISTRY/koalatech-lecturer-service:$TAG#g" kubernetes/production/09-lecturer-service.yaml
+          sed -i "s#placeholder#$REGISTRY/koalatech-course-service:$TAG#g" kubernetes/production/10-course-service.yaml
+          sed -i "s#placeholder#$REGISTRY/koalatech-enrollment-service:$TAG#g" kubernetes/production/11-enrollment-service.yaml
+          sed -i "s#placeholder#$REGISTRY/koalatech-frontend:$TAG#g" kubernetes/production/12-frontend.yaml
 
       - name: Apply Kubernetes manifests
         run: |
-          kubectl apply \
-            -f kubernetes/production/
-
-      - name: Update user-service image
-        run: |
-          kubectl set image deployment/user-service \
-            user-service=${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-user-service:${{ inputs.image_tag || github.sha }} \
-            -n production
+          kubectl apply -f kubernetes/production/
 
       - name: Wait for user-service rollout
         run: |
