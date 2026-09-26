@@ -73,6 +73,9 @@ jobs:
           terraform import azurerm_container_registry.acr /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.ContainerRegistry/registries/acraksweek06 || true
           terraform import azurerm_kubernetes_cluster.aks /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.ContainerService/managedClusters/aks-cluster-week06 || true
           terraform import azurerm_storage_account.storage_account /subscriptions/eaddd741-0ff7-4aef-b112-7850e8b2445b/resourceGroups/rg-week06/providers/Microsoft.Storage/storageAccounts/aksweek06 || true
+
+          terraform import azurerm_storage_container.student_profile_photo https://aksweek06.blob.core.windows.net/student-profile-photo || true
+          terraform import azurerm_storage_container.lecturer_profile_photo https://aksweek06.blob.core.windows.net/lecturer-profile-photo || true
           
           terraform fmt -check || true
           terraform plan -out=tfplan
