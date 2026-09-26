@@ -152,11 +152,15 @@ jobs:
         run: |
           kubectl apply -f kubernetes/production/
 
-      - name: Wait for user-service rollout
+      # - name: Wait for user-service rollout
+      #   run: |
+      #     kubectl rollout status deployment/user-service \
+      #       -n production \
+      #       --timeout=300s
+      - name: Force deployment update and check status
         run: |
-          kubectl rollout status deployment/user-service \
-            -n production \
-            --timeout=300s
+          kubectl rollout restart deployment/user-service -n production
+          kubectl rollout status deployment/user-service -n production --timeout=120s
 
       - name: Show production resources
         run: |
