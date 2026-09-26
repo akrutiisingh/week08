@@ -129,6 +129,21 @@ jobs:
             --dry-run=client \
             -o yaml | kubectl apply -f -
 
+            - name: Set images in manifests before apply
+        run: |
+          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-user-service:${{ inputs.image_tag || github.sha }}#g" \
+            kubernetes/production/07-user-service.yaml
+          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-student-service:${{ inputs.image_tag || github.sha }}#g" \
+            kubernetes/production/08-student-service.yaml
+          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-lecturer-service:${{ inputs.image_tag || github.sha }}#g" \
+            kubernetes/production/09-lecturer-service.yaml
+          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-course-service:${{ inputs.image_tag || github.sha }}#g" \
+            kubernetes/production/10-course-service.yaml
+          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-enrollment-service:${{ inputs.image_tag || github.sha }}#g" \
+            kubernetes/production/11-enrollment-service.yaml
+          sed -i "s#placeholder#${{ vars.ACR_LOGIN_SERVER || secrets.ACR_NAME }}/koalatech-frontend:${{ inputs.image_tag || github.sha }}#g" \
+            kubernetes/production/12-frontend.yaml
+
       - name: Apply Kubernetes manifests
         run: |
           kubectl apply \
